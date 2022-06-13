@@ -42,3 +42,11 @@ IS 'schedule a pg_cron job';
 
 /* admin should decide whether cron.schedule_in_database is safe by explicitly granting execute */
 REVOKE ALL ON FUNCTION cron.schedule_in_database(text,text,text,text,text,boolean) FROM public;
+
+/* Create a function to clean up the PG log */
+CREATE FUNCTION cron.clean_pg_log(logkeepdays int)
+RETURNS boolean
+LANGUAGE C
+AS 'MODULE_PATHNAME', $$clean_pglog$$;
+COMMENT ON FUNCTION cron.clean_pg_log(int)
+IS 'clean up the PG log';

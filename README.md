@@ -4,7 +4,7 @@
 
 ## What is pg_cron?
 
-pg_cron is a simple cron-based job scheduler for PostgreSQL (10 or higher) that runs inside the database as an extension. It uses the same syntax as regular cron, but it allows you to schedule PostgreSQL commands directly from the database:
+pg_cron is a simple cron-based job scheduler for PostgreSQL (9.5 or higher) that runs inside the database as an extension. It uses the same syntax as regular cron, but it allows you to schedule PostgreSQL commands directly from the database:
 
 ```sql
 -- Delete old data on Saturday at 3:30am (GMT)
@@ -88,18 +88,11 @@ make && sudo PATH=$PATH make install
 
 To start the pg_cron background worker when PostgreSQL starts, you need to add pg_cron to `shared_preload_libraries` in postgresql.conf. Note that pg_cron does not run any jobs as a long a server is in [hot standby](https://www.postgresql.org/docs/current/static/hot-standby.html) mode, but it automatically starts when the server is promoted.
 
-```
-# add to postgresql.conf
-
-# required to load pg_cron background worker on start-up
-shared_preload_libraries = 'pg_cron'
-```
-
 By default, the pg_cron background worker expects its metadata tables to be created in the "postgres" database. However, you can configure this by setting the `cron.database_name` configuration parameter in postgresql.conf.
-```
-# add to postgresql.conf
 
-# optionally, specify the database in which the pg_cron background worker should run (defaults to postgres) 
+```
+# add to postgresql.conf:
+shared_preload_libraries = 'pg_cron'
 cron.database_name = 'postgres'
 ```
 
@@ -113,23 +106,7 @@ CREATE EXTENSION pg_cron;
 GRANT USAGE ON SCHEMA cron TO marco;
 ```
 
-**Important**: By default, pg_cron uses libpq to open a new connection to the local database, which needs to be allowed by [pg_hba.conf](https://www.postgresql.org/docs/current/static/auth-pg-hba-conf.html). 
-It may be necessary to enable `trust` authentication for connections coming from localhost in  for the user running the cron job, or you can add the password to a [.pgpass file](https://www.postgresql.org/docs/current/static/libpq-pgpass.html), which libpq will use when opening a connection. 
-
-Alternatively, pg_cron can be configured to use background workers. In that case, the number of concurrent jobs is limited by the `max_worker_processes` setting, so you may need to raise that.
-
-```
-# Schedule jobs via background workers instead of localhost connections
-cron.use_background_workers = on
-# Increase the number of available background workers from the default of 8
-max_worker_processes = 20
-```
-
-You can also use a unix domain socket directory as the hostname and enable `trust` authentication for local connections in [pg_hba.conf](https://www.postgresql.org/docs/current/static/auth-pg-hba-conf.html), which is normally safe:
-```
-# Connect via a unix domain socket
-cron.host = '/tmp'
-```
+**Important**: Internally, pg_cron uses libpq to open a new connection to the local database. It may be necessary to enable `trust` authentication for connections coming from localhost in [pg_hba.conf](https://www.postgresql.org/docs/current/static/auth-pg-hba-conf.html) for the user running the cron job. Alternatively, you can add the password to a [.pgpass file](https://www.postgresql.org/docs/current/static/libpq-pgpass.html), which libpq will use when opening a connection.
 
 For security, jobs are executed in the database in which the `cron.schedule` function is called with the same permissions as the current user. In addition, users are only able to see their own jobs in the `cron.job` table.
 
@@ -137,12 +114,11 @@ For security, jobs are executed in the database in which the `cron.schedule` fun
 
 Articles showing possible ways of using pg_cron:
 
-* [Auto-partitioning using pg_partman](https://www.citusdata.com/blog/2018/01/24/citus-and-pg-partman-creating-a-scalable-time-series-database-on-postgresql/)
+* [Auto-partitioning using pg_partman](https://www.citusdata.com/blog/2018/01/24/citus-and-pg-partman-creating-a-scalable-time-series-database-on-PostgreSQL/)
 * [Computing rollups in an analytical dashboard](https://www.citusdata.com/blog/2017/12/27/real-time-analytics-dashboards-with-citus/)
 * [Deleting old data, vacuum](https://www.citusdata.com/blog/2016/09/09/pgcron-run-periodic-jobs-in-postgres/)
 * [Feeding cats](http://bonesmoses.org/2016/09/09/pg-phriday-irrelevant-inclinations/)
 * [Routinely invoking a function](https://fluca1978.github.io/2019/05/21/pgcron.html)
-* [Postgres as a cron server](https://supabase.io/blog/2021/03/05/postgres-as-a-cron-server)
 
 ## Managed services
 
@@ -154,9 +130,10 @@ The following table keeps track of which of the major managed Postgres services 
 | [Alibaba Cloud](https://www.alibabacloud.com/help/doc-detail/150355.htm) | :heavy_check_mark: |
 | [Amazon RDS](https://aws.amazon.com/rds/postgresql/)     | :heavy_check_mark:      |          |
 | [Azure](https://azure.microsoft.com/en-us/services/postgresql/) | :heavy_check_mark:  |
+| [Citus Cloud](https://www.citusdata.com/product/cloud)  | :heavy_check_mark: |
 | [Crunchy Bridge](https://www.crunchydata.com/products/crunchy-bridge/?ref=producthunt) | :heavy_check_mark: |
 | [DigitalOcean](https://www.digitalocean.com/products/managed-databases/) | :heavy_check_mark: |
-| [Google Cloud](https://cloud.google.com/sql/postgresql/) | :heavy_check_mark: |
+| [Google Cloud](https://cloud.google.com/sql/docs/postgres/) | :x:      |
 | [Heroku](https://elements.heroku.com/addons/heroku-postgresql) | :x: | |
 | [ScaleGrid](https://scalegrid.io/postgresql.html) | :heavy_check_mark:  |
 | [Scaleway](https://www.scaleway.com/en/database/) | :heavy_check_mark:  |

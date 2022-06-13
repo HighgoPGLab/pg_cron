@@ -1,0 +1,38 @@
+postgres=# create extension pg_cron ;
+CREATE EXTENSION
+postgres=# SELECT cron.schedule('Keep a log for 2 days and clean it every 2 minutes','*/2 * * * *', $$select cron.clean_pg_log(2)$$);
+ schedule
+----------
+        1
+(1 row)
+
+postgres=# select * from cron.job;
+ jobid |  schedule   |           command           | nodename  | nodeport | database | username | active |                      jobname
+
+-------+-------------+-----------------------------+-----------+----------+----------+----------+--------+-----------------------------
+-----------------------
+     1 | */2 * * * * | select cron.clean_pg_log(2) | localhost |     5432 | postgres | postgre  | t      | Keep a log for 2 days and cl
+ean it every 2 minutes
+(1 row)
+
+postgres=# select * from cron.job_run_details;
+ jobid | runid | job_pid | database | username |           command           |  status   | return_message |          start_time
+   |           end_time
+-------+-------+---------+----------+----------+-----------------------------+-----------+----------------+----------------------------
+---+-------------------------------
+     1 |     1 |  111773 | postgres | postgre  | select cron.clean_pg_log(2) | succeeded | SELECT 1       | 2022-06-10 15:06:00.016624+
+08 | 2022-06-10 15:06:00.031153+08
+(1 rows)
+
+postgres=#
+
+cat /home/postgresql14_2/pg14/data/pglog_clean/pglog_clean.log
+***PostgreSQL run logs clean start***
+Clean time: 2022-06-10 15:06:00
+Keep days: 2 day
+Cleaned log directory: /home/postgresql14_2/pg14/data/pgdb_log/
+Cleaned file information:
+[postgresqldb_08.log] Last file modification: Wed Jun  8 17:46:08 2022
+[postgresqldb_08.csv] Last file modification: Wed Jun  8 17:54:04 2022
+Cleaned file number: 2
+***PostgreSQL run logs clean completed***

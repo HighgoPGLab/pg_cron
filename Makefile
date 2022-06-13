@@ -1,11 +1,10 @@
 # src/test/modules/pg_cron/Makefile
 
 EXTENSION = pg_cron
+EXTVERSION = 1.3
 
 DATA_built = $(EXTENSION)--1.0.sql
 DATA = $(wildcard $(EXTENSION)--*--*.sql)
-
-REGRESS_OPTS =--temp-config=./pg_cron.conf --temp-instance=./tmp_check
 REGRESS = pg_cron-test 
 
 # compilation configuration

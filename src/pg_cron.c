@@ -238,7 +238,7 @@ _PG_init(void)
 		NULL,
 		&EnableSuperuserJobs,
 		true,
-		PGC_POSTMASTER,
+		PGC_USERSET,
 		GUC_SUPERUSER_ONLY,
 		NULL, NULL, NULL);
 
@@ -268,7 +268,7 @@ _PG_init(void)
 			gettext_noop("Maximum number of jobs that can run concurrently."),
 			NULL,
 			&MaxRunningTasks,
-			(MaxConnections < 32) ? MaxConnections : 32,
+			32,
 			0,
 			MaxConnections,
 			PGC_POSTMASTER,
@@ -280,7 +280,7 @@ _PG_init(void)
 			gettext_noop("Maximum number of jobs that can run concurrently."),
 			NULL,
 			&MaxRunningTasks,
-			(max_worker_processes - 1 < 5) ? max_worker_processes - 1 : 5,
+			5,
 			0,
 			max_worker_processes - 1,
 			PGC_POSTMASTER,
@@ -1745,18 +1745,8 @@ ManageCronTask(CronTask *task, TimestampTz currentTime)
 		default:
 		{
 			int currentPendingRunCount = task->pendingRunCount;
-			CronJob *job = GetCronJob(jobId);
 
-			/*
-			 * It may happen that job was unscheduled during task execution.
-			 * In this case we keep task as-is. Otherwise, we should
-			 * re-initialize task, i.e. reset fields to initial values including
-			 * status.
-			 */
-			if (job != NULL && job->active)
-				InitializeCronTask(task, jobId);
-			else
-				task->state = CRON_TASK_WAITING;
+			InitializeCronTask(task, jobId);
 
 			/*
 			 * We keep the number of runs that should have started while
@@ -2038,6 +2028,7 @@ CronBackgroundWorker(Datum main_arg)
 	/* Post-execution cleanup. */
 	disable_timeout(STATEMENT_TIMEOUT, false);
 	CommitTransactionCommand();
+	ProcessCompletedNotifies();
 	pgstat_report_activity(STATE_IDLE, command);
 	pgstat_report_stat(true);
 
